@@ -8,6 +8,7 @@ public class Percolation {
   private boolean [][] world;
   private int openSitesSize;
   private WeightedQuickUnionUF uf;
+  private WeightedQuickUnionUF backwashUF;
   private int topIndex;
   private int bottomIndex;
 
@@ -20,12 +21,7 @@ public class Percolation {
     this.uf = new WeightedQuickUnionUF(N*N+2);
     this.topIndex = N*N;
     this.bottomIndex = N*N+1;
-
-    // for(int i=0; i<world[N-1].length; i++){
-    //   lastRowIndex = xyTo1D(N-1,i);
-    //   uf.union(bottomIndex,lastRowIndex);
-    //   // System.out.println("lastRowIndex: "+lastRowIndex+ ", Root: "+uf.find(lastRowIndex));
-    // }
+    this.backwashUF = new WeightedQuickUnionUF(N*N+1);
 
     for(boolean[] array:world){
       Arrays.fill(array,false);
@@ -39,6 +35,11 @@ public class Percolation {
       if(row==0){
         int index = xyTo1D(row,col);
         uf.union(topIndex,index);
+        backwashUF.union(topIndex,index);
+      }
+      if(!percolates() && row==world.length-1){
+        int index = xyTo1D(row,col);
+        uf.union(bottomIndex,index);
       }
       world[row][col]=true;
       unionNeighbors(row,col);
@@ -56,7 +57,7 @@ public class Percolation {
   public boolean isFull(int row, int col){
     validateIndex(row,col);
     int indexA = xyTo1D(row,col);
-    return uf.connected(indexA,topIndex);
+    return backwashUF.connected(indexA,topIndex);
   }
 
   // number of open sites
@@ -65,9 +66,8 @@ public class Percolation {
   }
 
   // does the system percolate?
-  //TODO
   public boolean percolates(){
-    return false;
+    return uf.connected(topIndex,bottomIndex);
   }
 
   public void printWorld(){
@@ -89,18 +89,18 @@ public class Percolation {
     int indexB;
     //Top
     if(r-1>=0 && world[r-1][c]){
-      // System.out.println("Top");
       indexB = xyTo1D(r-1,c);
       if(!uf.connected(indexA,indexB)){
         uf.union(indexA,indexB);
+        backwashUF.union(indexA,indexB);
       }
     }
     //bottom
     if(r+1<=world.length-1 && world[r+1][c]){
-      // System.out.println("Bottom");
       indexB = xyTo1D(r+1,c);
       if(!uf.connected(indexA,indexB)){
         uf.union(indexA,indexB);
+        backwashUF.union(indexA,indexB);
       }
     }
     //left
@@ -108,14 +108,15 @@ public class Percolation {
       indexB = xyTo1D(r,c-1);
       if(!uf.connected(indexA,indexB)){
         uf.union(indexA,indexB);
+        backwashUF.union(indexA,indexB);
       }
     }
     //right
     if(c+1<=world.length-1 && world[r][c+1]){
-      // System.out.println("Right");
       indexB = xyTo1D(r,c+1);
       if(!uf.connected(indexA,indexB)){
         uf.union(indexA,indexB);
+        backwashUF.union(indexA,indexB);
       }
     }
   }
@@ -138,6 +139,5 @@ public class Percolation {
     p.open(1,2);
     p.printWorld();
     System.out.println(p.numberOfOpenSites());
-
   }
 }
